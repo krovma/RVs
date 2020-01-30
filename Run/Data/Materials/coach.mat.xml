@@ -1,0 +1,7 @@
+<material id="coach"
+          shader="Data/Shaders/lit.shader.xml">
+  <diffuse src="Data/Images/example_color.png" />
+  <normal src="Data/Images/example_normal.png" />
+  <specular src="Data/Images/example_spec.png" />
+  <emmisive src="Data/Images/Test_SpriteSheet4x4.png" />
+</material>

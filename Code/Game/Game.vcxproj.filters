@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="General">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Gameplay">
+      <UniqueIdentifier>{5c38a86e-780c-4eca-b685-946707db4cbb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data">
+      <UniqueIdentifier>{a29b9e4b-f7e3-4af5-8090-b8044f74d92e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{1518142d-a475-4842-a908-45742be0b5e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Data\Material">
+      <UniqueIdentifier>{7299cb11-f941-406a-a790-fa634e8870d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTest">
+      <UniqueIdentifier>{311d009a-1a43-4332-9dd5-2286c24f3b5e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main_Windows.cpp">
+      <Filter>General</Filter>
+    </ClCompile>
+    <ClCompile Include="App.cpp">
+      <Filter>General</Filter>
+    </ClCompile>
+    <ClCompile Include="Game.cpp">
+      <Filter>Gameplay</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>Gameplay</Filter>
+    </ClCompile>
+    <ClCompile Include="MemoryUnitTest.cpp">
+      <Filter>UnitTest</Filter>
+    </ClCompile>
+    <ClCompile Include="LogTest.cpp">
+      <Filter>UnitTest</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App.hpp">
+      <Filter>General</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCommon.hpp">
+      <Filter>General</Filter>
+    </ClInclude>
+    <ClInclude Include="Game.hpp">
+      <Filter>Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.hpp">
+      <Filter>Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineBuildPreferences.hpp">
+      <Filter>General</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="..\..\Run\Data\GameConfig.xml">
+      <Filter>Data</Filter>
+    </Xml>
+    <Xml Include="..\..\Run\Data\Shaders\unlit.shader.xml">
+      <Filter>Shader</Filter>
+    </Xml>
+    <Xml Include="..\..\Run\Data\Shaders\lit.shader.xml">
+      <Filter>Shader</Filter>
+    </Xml>
+    <Xml Include="..\..\Run\Data\Materials\coach.mat.xml">
+      <Filter>Data\Material</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\..\Run\Data\Shaders\a01.hlsl">
+      <Filter>Shader</Filter>
+    </Text>
+    <Text Include="..\..\Run\Data\Shaders\a02_ubo.hlsl">
+      <Filter>Shader</Filter>
+    </Text>
+    <Text Include="..\..\Run\Data\Shaders\a02_vbo.hlsl">
+      <Filter>Shader</Filter>
+    </Text>
+    <Text Include="..\..\Run\Data\Shaders\unlit.hlsl">
+      <Filter>Shader</Filter>
+    </Text>
+    <Text Include="..\..\Run\Data\Shaders\lit.hlsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
+  </ItemGroup>
+</Project>
