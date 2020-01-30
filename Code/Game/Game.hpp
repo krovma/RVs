@@ -10,6 +10,8 @@
 #include "Game/GameCommon.hpp"
 #include "Engine/Renderer/Material.hpp"
 
+#include "Engine/Math/Convex.hpp"
+
 extern RenderContext* g_theRenderer;
 extern InputSystem* g_theInput;
 extern AudioSystem* g_theAudio;
@@ -78,18 +80,7 @@ private:
 	float m_upSeconds = 0.f;
 
 
-	CPUMesh __cpuMeshForCube = CPUMesh(RenderBufferLayout::AcquireLayoutFor<Vertex_PCUNT>());
-	GPUMesh* __gpuMeshForCube;
-	TextureView2D* __cubeTexture;
-	TextureView2D* __cubeNormal;
-	TextureView2D* __cubeSpecular;
+	//TMP
 
-
-
-	CPUMesh __cpuMeshForUVS = CPUMesh(RenderBufferLayout::AcquireLayoutFor<Vertex_PCUNT>());
-	GPUMesh* __gpuMeshForUVS;
-	TextureView2D* __UVSTexture;
-	TextureView2D* __UVSNormal;
-
-	Material* _cubeMat;
+	std::vector<ConvexPoly> m_polys;
 };

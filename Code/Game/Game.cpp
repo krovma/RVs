@@ -52,38 +52,6 @@ Game::~Game()
 	Shutdown();
 }
 
-static bool _toggleNormal(NamedStrings& param) {
-	UNUSED(param);
-	_frameBufferContent.useNormal = 1.f - _frameBufferContent.useNormal;
-	return true;
-}
-static bool _toggleSpecular(NamedStrings& param)
-{
-	UNUSED(param);
-	_frameBufferContent.useSpecular = 1.f - _frameBufferContent.useSpecular;
-	return true;
-}
-static bool _toggleTangent(NamedStrings& param)
-{
-	UNUSED(param);
-	_frameBufferContent.useTangent = 1.f - _frameBufferContent.useTangent;
-	return true;
-}
-
-static bool _setAmbientLight(NamedStrings& param)
-{
-	Rgba amb = param.GetRgba("color", Rgba::TRANSPARENT_BLACK);
-	g_theRenderer->SetAmbientLight(amb, amb.a);
-	return true;
-}
-
-static bool _setSpecular(NamedStrings& param)
-{
-	float f = param.GetFloat("f", 0.f);
-	float p = param.GetFloat("p", 1.f);
-	g_theRenderer->SetSpecularFactors(f, p);
-	return true;
-}
 static Entity* sth[10];
 static int top = 0;
 static bool _alloc_cmd(NamedStrings& param)
@@ -173,16 +141,15 @@ static bool _Profile_Report_Flat(NamedStrings& param)
 
 void Game::Startup()
 {
-	//m_mainCamera = new Camera(Vec2(0, 0), Vec2(200, 100));
 	g_theWindow->LockMouse();
-	//g_theWindow->SetMouseInputMode(MOUSE_INPUT_RELATIVE);
-	//g_theWindow->HideMouse();
+	g_theWindow->SetMouseInputMode(MOUSE_INPUT_ABSOLUTE);
+	g_theWindow->HideMouse();
 	
 	m_cameraPosition = Vec3(0, 0, 0);
 	m_mainCamera = new Camera();
-	//m_shader = g_theRenderer->AcquireShaderFromFile("Data/Shaders/unlit.hlsl");
+	m_shader = Shader::CreateShaderFromXml("Data/Shaders/unlit.shader.xml", g_theRenderer);
 	//m_shader->SetDepthStencil(COMPARE_GREATEREQ, true);
-	m_shader = Shader::CreateShaderFromXml("Data/Shaders/lit.shader.xml", g_theRenderer);
+	//m_shader = Shader::CreateShaderFromXml("Data/Shaders/lit.shader.xml", g_theRenderer);
 	//float aspect = m_screenWidth / m_screenHeight;
 	//m_mainCamera->SetOrthoView(Vec2(-5.f,-5.f), Vec2(5.f, 5.f), -0.001f, -100.0f);
 
@@ -190,64 +157,9 @@ void Game::Startup()
 		g_theRenderer->AcquireBitmapFontFromFile(
 			g_gameConfigs.GetString("consoleFont", "SquirrelFixedFont").c_str()
 		);
-/*
-	float m[] = {
-		1,2,3,4,
-		1,1,2,3,
-		1,1,1,2,
-		1,1,1,1,
-	};
-	Mat4 mat(m);
-	Mat4 inv(mat.GetInverted());
-	m[0];*/
+
 
 	g_frameBuffer = new ConstantBuffer(g_theRenderer);
-
-	AABB3 cube(Vec3(-1,-1,-1), Vec3(1, 1, 1));
-
-	__cpuMeshForCube.Clear();
-	__cpuMeshForCube.AddCubeToMesh(cube);
-	//__cpuMeshForCube.SetLayout(RenderBufferLayout::AcquireLayoutFor<Vertex_PCUN>());
-	__gpuMeshForCube = new GPUMesh(g_theRenderer);
-	__gpuMeshForCube->CreateFromCPUMesh(__cpuMeshForCube);
-	__cubeTexture = g_theRenderer->AcquireTextureViewFromFile("Data/Images/example_color.png");
-	__cubeNormal = g_theRenderer->AcquireTextureViewFromFile("Data/Images/example_normal.png");
-	__cubeSpecular = g_theRenderer->AcquireTextureViewFromFile("Data/Images/example_spec.png");
-
-
-	//__cubeTexture = nullptr;
-	__cpuMeshForUVS.Clear();
-	//__cpuMeshForUVS.AddUVSphereToMesh(Vec3(0,0,0), 1.f);
-	//__cpuMeshForUVS.AddCylinderToMesh(Vec3(0, 0, 0), Vec3(1, 0, 0), 0.1f);
-	__cpuMeshForUVS.AddUVSphereToMesh(Vec3(0, 0, 0), 2.f);
-	//__cpuMeshForUVS.SetLayout(RenderBufferLayout::AcquireLayoutFor<Vertex_PCUN>());
-	__gpuMeshForUVS = new GPUMesh(g_theRenderer);
-	__gpuMeshForUVS->CreateFromCPUMesh(__cpuMeshForUVS);
-	__UVSTexture = g_theRenderer->AcquireTextureViewFromFile("Data/Images/ruinwall_color.png");
-	__UVSNormal = g_theRenderer->AcquireTextureViewFromFile("Data/Images/ruinwall_normal.png");
-
-
-	RenderContext::Light dirLight;
-	dirLight.color = Vec3(1, 1, 1);
-	dirLight.isDirectional = 1.f;
-	dirLight.direction = Vec3(-1, -1, 0);
-	dirLight.intensity = 4.f;
-
-	g_theRenderer->SetAmbientLight(Rgba::WHITE, 0.0f);
-	g_theRenderer->EnableLight(0,dirLight);
-	
-	/*dirLight.color = Vec3(1, 0, 0);
-	dirLight.direction = Vec3(0, -1, 0);
-	g_theRenderer->EnableLight(1, dirLight);*/
-
-	_cubeMat = Material::AcquireMaterialFromFile(g_theRenderer, "Data/Materials/coach.mat.xml");
-
-	g_Event->SubscribeEventCallback("normal", _toggleNormal);
-	g_Event->SubscribeEventCallback("specular", _toggleSpecular);
-	g_Event->SubscribeEventCallback("tangent", _toggleTangent);
-
-	g_Event->SubscribeEventCallback("ambient", _setAmbientLight);
-	g_Event->SubscribeEventCallback("specular", _setSpecular);
 
 	g_Event->SubscribeEventCallback("test_alloc", _alloc_cmd);
 	g_Event->SubscribeEventCallback("test_free", _free_cmd);
@@ -262,6 +174,15 @@ void Game::Startup()
 	g_Event->SubscribeEventCallback("report", _Profile_Report);
 	g_Event->SubscribeEventCallback("flat_report", _Profile_Report_Flat);
 
+
+
+
+	for (size_t i = 0; i< 10;++i) {
+		m_polys.emplace_back(ConvexPoly::GetRandomPoly(g_rng.GetFloatInRange(0.1f, 0.3f)));
+	}
+
+
+	
 	Log("Game", "Game start");
 }
 
@@ -273,39 +194,22 @@ void Game::BeginFrame()
 #include "Engine/Develop/Profile.hpp"
 void Game::Update(float deltaSeconds)
 {
-	PROFILE_SCOPE(__FUNCTION__);
+	//PROFILE_SCOPE(__FUNCTION__);
 	m_upSeconds += deltaSeconds;
 	_frameBufferContent.time = m_upSeconds;
 	g_theConsole->Update(deltaSeconds);
 
 	
-	Vec2 mouseMove(g_theWindow->GetClientMouseRelativeMovement());
-	mouseMove *= -0.1f;
-	m_cameraRotation += Vec2(mouseMove.y * m_cameraRotationSpeedDegrees.y, mouseMove.x * m_cameraRotationSpeedDegrees.x);
-	
-	RenderContext::Light pointLight;
-	Vec3 pos(0.f, 2.f * CosDegrees(30.f * m_upSeconds), 2.f * SinDegrees(30.f * m_upSeconds) - 1.f);
-	pointLight.color = Vec3(1, 1, 1);
-	pointLight.isDirectional = 0.f;
-	pointLight.intensity = 1.f;
-	pointLight.position = pos;
-	g_theRenderer->EnableLight(2, pointLight);
-	DebugRenderer::DrawPoint3D(pos, 0.05f, 0.f, Rgba(0.f, 1, 0));
+	//Vec2 mouseMove(g_theWindow->GetClientMouseRelativeMovement());
+	//mouseMove *= -0.1f;
+	//m_cameraRotation += Vec2(mouseMove.y * m_cameraRotationSpeedDegrees.y, mouseMove.x * m_cameraRotationSpeedDegrees.x);
 
-	/*pos = Vec3(2.f * CosDegrees(30.f * m_upSeconds) - 1.f ,0.f, 2.f * SinDegrees(30.f * m_upSeconds) - 1.f);
-	pointLight.color = Vec3(1, 1, 0);
-	pointLight.isDirectional = 0.f;
-	pointLight.intensity = 1.f;
-	pointLight.position = pos;
-	g_theRenderer->EnableLight(3, pointLight);
-	DebugRenderer::DrawPoint3D(pos, 0.05f, 0.f, Rgba(1.f, 1, 0));*/
-
-	__cubeTexture = g_theRenderer->AcquireTextureViewFromFile("Data/Images/example_color.png");
-	__cubeNormal = g_theRenderer->AcquireTextureViewFromFile("Data/Images/example_normal.png");
-	__cubeSpecular = g_theRenderer->AcquireTextureViewFromFile("Data/Images/example_spec.png");
-	__UVSTexture = g_theRenderer->AcquireTextureViewFromFile("Data/Images/ruinwall_color.png");
-	__UVSNormal = g_theRenderer->AcquireTextureViewFromFile("Data/Images/ruinwall_normal.png");
-
+	IntVec2 mousePosition = g_theWindow->GetClientMousePosition();
+	static IntVec2 CLIENT_SIZE = g_theWindow->GetClientResolution();
+	DebugRenderer::Log(Stringf("%i %i", mousePosition.x, mousePosition.y, CLIENT_SIZE.x, CLIENT_SIZE.y), 0, Rgba::BLACK);
+	Vec2 mouse_in_world = Vec2(FloatMap(mousePosition.x, 0, CLIENT_SIZE.x, -1, 1)
+	, FloatMap(mousePosition.y, 0, CLIENT_SIZE.y, 1, -1));
+	DebugRenderer::DrawPoint3D(Vec3(mouse_in_world, 0.5f), 0.01f, 0, Rgba::GREEN);
 
 	UpdateUI();
 	
@@ -319,51 +223,33 @@ void Game::Render() const
 	m_mainCamera->SetRenderTarget(renderTarget);
 	DepthStencilTargetView* dstTarget = g_theRenderer->GetFrameDepthStencilTarget();
 	m_mainCamera->SetDepthStencilTarget(dstTarget);
-	m_mainCamera->SetProjection(Camera::MakePerspectiveProjection(
-		60.f,
-		renderTarget->GetAspect(),
-		-0.1f,
-		-100.f
-	));
-	Mat4 cameraModel; //T*R*S
-	cameraModel = Mat4::MakeTranslate3D(m_cameraPosition) * Mat4::MakeRotationXYZ(m_cameraRotation.x, m_cameraRotation.y, 0.f);
+	m_mainCamera->SetProjection(Camera::MakeOrthogonalProjection(Vec2(-1, -1), Vec2(1, 1), 1, -1));
+	Mat4 cameraModel =// = Mat4::Identity; //T*R*S
+	 Mat4::MakeTranslate3D(Vec3(0, 0, 0));
 	m_mainCamera->SetCameraModel(cameraModel);
-	DebugRenderer::DrawCameraBasisOnScreen(*m_mainCamera, 0.f);
+	//DebugRenderer::DrawCameraBasisOnScreen(*m_mainCamera, 0.f);
 	g_theRenderer->BeginCamera(*m_mainCamera);
-	g_theRenderer->ClearColorTarget(Rgba::BLACK);
+	g_theRenderer->ClearColorTarget(Rgba::WHITE);
 	g_theRenderer->ClearDepthStencilTarget(0.f);
 	g_theRenderer->BindShader(m_shader);
 	m_shader->ResetShaderStates();
 
-	_frameBufferContent.emmisive = (sin(m_upSeconds) + 1.f)*0.5f;
+
+	std::vector<Vertex_PCU> verts;
+	for (auto each:m_polys) {
+		for (size_t i = 1; i < each.m_points.size(); ++ i) {
+			AddVerticesOfLine2D(verts, each.m_points[i - 1], each.m_points[i], 0.002f, Rgba::BLACK);
+		}
+		AddVerticesOfLine2D(verts, each.m_points[each.m_points.size() - 1], each.m_points[0], 0.002f, Rgba::BLACK);
+	}
+
+	
+	//_frameBufferContent.emmisive =  (sin(m_upSeconds) + 1.f)*0.5f;
 	g_frameBuffer->Buffer(&_frameBufferContent, sizeof(_frameBufferContent));
 	g_theRenderer->BindConstantBuffer(CONSTANT_SLOT_FRAME, g_frameBuffer);
-	ConstantBuffer* model = g_theRenderer->GetModelBuffer();
-	g_theRenderer->BindConstantBuffer(CONSTANT_SLOT_MODEL, model);
-	
-	Mat4 modelMat = Mat4::MakeTranslate3D(Vec3(-2, 0, -5)) * Mat4::MakeRotationXYZ(0, m_upSeconds * 30.f, 0);
-	model->Buffer(&modelMat, sizeof(modelMat));
-	_cubeMat->UseMaterial(g_theRenderer);
-	g_theRenderer->DrawMesh(*__gpuMeshForCube);
-
-	modelMat = Mat4::MakeTranslate3D(Vec3(2, 0, -3)) * Mat4::MakeRotationXYZ(m_upSeconds * 15.f, m_upSeconds * 30.f, 0);// *Mat4::Identity;
-	model->Buffer(&modelMat, sizeof(modelMat));
-	g_theRenderer->BindTextureViewWithSampler(TEXTURE_SLOT_DIFFUSE, __UVSTexture);
-	g_theRenderer->BindTextureViewWithSampler(TEXTURE_SLOT_NORMAL, __UVSNormal);
-	g_theRenderer->BindTextureViewWithSampler(TEXTURE_SLOT_EMMISIVE, nullptr);
-	g_theRenderer->DrawMesh(*__gpuMeshForUVS);
-
-	/*
-	// Check TBN Base
-	for (auto eachPoint : __cpuMeshForUVS.GetRawData()) {
-		Vec3 pos = (modelMat * Vec4(eachPoint.Position, 1.f)).XYZ();
-		Vec3 normal = (modelMat * Vec4(eachPoint.Normal, 0.f)).XYZ();
-		Vec3 tan = (modelMat * Vec4(eachPoint.Tangent, 0.f)).XYZ();
-		Vec3 bitan = normal.CrossProduct(tan).GetNormalized();
-		DebugRenderer::DrawLine3D(pos, pos + tan * 0.05f, 0.005f, 0.f, Rgba::RED);
-		DebugRenderer::DrawLine3D(pos, pos + bitan * 0.05f, 0.005f, 0.f, Rgba::GREEN);
-		DebugRenderer::DrawLine3D(pos, pos + normal * 0.05f, 0.005f, 0.f, Rgba::BLUE);
-	}*/
+	g_theRenderer->DrawVertexArray(verts.size(), verts);
+	//ConstantBuffer* model = g_theRenderer->GetModelBuffer();
+	//g_theRenderer->BindConstantBuffer(CONSTANT_SLOT_MODEL, model);
 
 	_RenderDebugInfo(true);
 	
@@ -373,17 +259,6 @@ void Game::Render() const
 ////////////////////////////////
 void Game::UpdateUI()
 {
-	//PROFILE_SCOPE(__FUNCTION__);
-	//ImGui::Begin("ImGui Test", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-	//auto pos = g_theWindow->GetClientMousePosition();
-	//ImGui::Text("%d %d", pos.x, pos.y);
-	//if (ImGui::Button("Save"))
-	//{
-		//g_theConsole->Print("[ImGui] Button Clicked");
-	//}
-	//ImGui::InputText("string", ui_strbuf, IM_ARRAYSIZE(ui_strbuf));
-	//ImGui::SliderFloat("float", &ui_floatbuf, 0.0f, 1.0f);
-	//ImGui::End();
 }
 
 void Game::_RenderDebugInfo(bool afterRender) const
@@ -413,8 +288,6 @@ void Game::Shutdown()
 	//delete _timeBuffer;
 	delete m_mainCamera;
 	delete g_frameBuffer;
-	delete __gpuMeshForCube;
-	delete __gpuMeshForUVS;
 }
 
 void Game::GetScreenSize(float *outputWidth, float *outputHeight) const
