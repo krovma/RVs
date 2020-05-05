@@ -8,10 +8,7 @@
 #include "Engine/Renderer/CPUMesh.hpp"
 #include "Engine/Core/Vertex_PCUNT.hpp"
 #include "Game/GameCommon.hpp"
-#include "Engine/Renderer/Material.hpp"
-
-#include "Engine/Math/Convex.hpp"
-
+#include "Game/RVSGame.hpp"
 extern RenderContext* g_theRenderer;
 extern InputSystem* g_theInput;
 extern AudioSystem* g_theAudio;
@@ -22,6 +19,8 @@ class Shader;
 
 class Game
 {
+public :
+	static constexpr size_t MAX_ZONES = 2048 * 10;
 public:
 	Game();
 	~Game();
@@ -45,12 +44,17 @@ public:
 	const AudioSystem* getAudioSystem() const { return g_theAudio; }
 	void ToScreenShot(const std::string& path) { m_shotPath = path; m_screenshot = true; }
 	RNG* getRNG() { return m_rng; }
-
+	Vec2 get_mouse_in_world() const;
+	
 	//IO
 	void DoKeyDown(unsigned char keyCode);
 	void DoKeyRelease(unsigned char keyCode);
 	bool IsConsoleUp();
 	void DoChar(char charCode);
+
+	void mouse_down();
+	void mouse_up();
+	void mouse_wheel(int delta);
 
 //DEBUG
 	void ToggleDebugView();
@@ -75,6 +79,9 @@ private:
 	char ui_strbuf[256] = {};
 	float ui_floatbuf = 0;
 
+	size_t m_num_zone = 10;
+	RVSGame* m_rvsGame = nullptr;
+	bool m_report_mouse = false;
 //DEBUG
 	bool m_flagDebug = false;
 	float m_upSeconds = 0.f;
@@ -82,5 +89,5 @@ private:
 
 	//TMP
 
-	std::vector<ConvexPoly> m_polys;
+	//std::vector<ConvexPoly> m_polys;
 };

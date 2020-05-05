@@ -36,7 +36,7 @@ bool WindowsMessageHandlingProcedure(void *hWnd, unsigned int wmMessageCode, uns
 		io = &ImGui::GetIO();
 	}
 #endif
-
+	//DebuggerPrintf("\t\t\t\t\t\t\t\t\t\t\t\t\t%x\n", wmMessageCode);
 	switch (wmMessageCode) {
 		// App close requested via "X" button, or right-click "Close Window" on task bar, or "Close" from system menu, or Alt-F4
 	case WM_CLOSE: {
@@ -69,6 +69,20 @@ bool WindowsMessageHandlingProcedure(void *hWnd, unsigned int wmMessageCode, uns
 		g_theApp->HandleChar(asChar);
 		return true;
 		}
+	case WM_LBUTTONDOWN: {
+		g_theApp->HandleMouseButtonDown();
+		return true;
+	}
+	case WM_LBUTTONUP: {
+		g_theApp->HandleMouseButtonUp();
+		return true;
+	}
+	case WM_MOUSEWHEEL: {
+		int zDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+		g_theApp->HandleMouseWheel(zDelta);
+		return true;
+	}
+			
 	}
 
 	// Send back to Windows any unhandled/unconsumed messages we want other apps to see (e.g. play/pause in music apps, etc.)

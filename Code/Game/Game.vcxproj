@@ -199,9 +199,11 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Entity.cpp" />
     <ClCompile Include="Game.cpp" />
+    <ClCompile Include="ghcs.cpp" />
     <ClCompile Include="LogTest.cpp" />
     <ClCompile Include="Main_Windows.cpp" />
     <ClCompile Include="MemoryUnitTest.cpp" />
+    <ClCompile Include="RVSGame.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.hpp" />
@@ -209,6 +211,8 @@
     <ClInclude Include="Entity.hpp" />
     <ClInclude Include="Game.hpp" />
     <ClInclude Include="GameCommon.hpp" />
+    <ClInclude Include="ghcs.hpp" />
+    <ClInclude Include="RVSGame.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="..\..\Run\Data\GameConfig.xml" />
@@ -276,6 +280,7 @@
     </Text>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Run\Data\test.ghcs" />
     <None Include="cpp.hint" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

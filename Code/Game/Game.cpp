@@ -139,6 +139,30 @@ static bool _Profile_Report_Flat(NamedStrings& param)
 	return true;
 }
 
+// Ghcs proc
+static bool _Game_Load_ghcs(NamedStrings& param)
+{
+	unsigned char buffer[256];
+	memset(buffer, 0, 256);
+	std::string path = param.GetString("path", "Data/test.ghcs");
+	LoadFileToBuffer(buffer, 256, path.c_str());
+	buffer_reader new_reader(buffer, 256);
+
+	char c = 0;
+	c = new_reader.next_basic<char>();
+	DebugRenderer::Log(Stringf("%c", c), -1, Rgba::BLACK);
+	c = new_reader.next_basic<char>();
+	DebugRenderer::Log(Stringf("%c", c), -1, Rgba::BLACK);
+	c = new_reader.next_basic<char>();
+	DebugRenderer::Log(Stringf("%c", c), -1, Rgba::BLACK);
+	c = new_reader.next_basic<char>();
+	DebugRenderer::Log(Stringf("%c", c), -1, Rgba::BLACK);
+
+	int x = new_reader.next_basic<int>();
+	float y = new_reader.next_basic<float>();
+	DebugRenderer::Log(Stringf("%i, %f", x, y), -1, Rgba::BLACK);
+}
+
 void Game::Startup()
 {
 	g_theWindow->LockMouse();
@@ -173,15 +197,10 @@ void Game::Startup()
 
 	g_Event->SubscribeEventCallback("report", _Profile_Report);
 	g_Event->SubscribeEventCallback("flat_report", _Profile_Report_Flat);
+	g_Event->SubscribeEventCallback("ghcs", _Game_Load_ghcs);
 
-
-
-
-	for (size_t i = 0; i< 10;++i) {
-		m_polys.emplace_back(ConvexPoly::GetRandomPoly(g_rng.GetFloatInRange(0.1f, 0.3f)));
-	}
-
-
+	m_rvsGame = new RVSGame();
+	m_rvsGame->Startup(m_num_zone);
 	
 	Log("Game", "Game start");
 }
@@ -190,6 +209,7 @@ void Game::BeginFrame()
 {
 	g_theRenderer->BeginFrame();
 	g_theConsole->BeginFrame();
+	m_rvsGame->BeginFrame();
 }
 #include "Engine/Develop/Profile.hpp"
 void Game::Update(float deltaSeconds)
@@ -206,11 +226,17 @@ void Game::Update(float deltaSeconds)
 
 	IntVec2 mousePosition = g_theWindow->GetClientMousePosition();
 	static IntVec2 CLIENT_SIZE = g_theWindow->GetClientResolution();
-	DebugRenderer::Log(Stringf("%i %i", mousePosition.x, mousePosition.y, CLIENT_SIZE.x, CLIENT_SIZE.y), 0, Rgba::BLACK);
+	DebugRenderer::Log(Stringf("%u", m_num_zone), 0, Rgba::RED);
 	Vec2 mouse_in_world = Vec2(FloatMap(mousePosition.x, 0, CLIENT_SIZE.x, -1, 1)
 	, FloatMap(mousePosition.y, 0, CLIENT_SIZE.y, 1, -1));
 	DebugRenderer::DrawPoint3D(Vec3(mouse_in_world, 0.5f), 0.01f, 0, Rgba::GREEN);
 
+	if (m_report_mouse) {
+		m_rvsGame->mouse_up(get_mouse_in_world());
+	}
+
+	m_rvsGame->Update(deltaSeconds);
+	
 	UpdateUI();
 	
 }
@@ -233,21 +259,12 @@ void Game::Render() const
 	g_theRenderer->ClearDepthStencilTarget(0.f);
 	g_theRenderer->BindShader(m_shader);
 	m_shader->ResetShaderStates();
-
-
-	std::vector<Vertex_PCU> verts;
-	for (auto each:m_polys) {
-		for (size_t i = 1; i < each.m_points.size(); ++ i) {
-			AddVerticesOfLine2D(verts, each.m_points[i - 1], each.m_points[i], 0.002f, Rgba::BLACK);
-		}
-		AddVerticesOfLine2D(verts, each.m_points[each.m_points.size() - 1], each.m_points[0], 0.002f, Rgba::BLACK);
-	}
-
-	
-	//_frameBufferContent.emmisive =  (sin(m_upSeconds) + 1.f)*0.5f;
 	g_frameBuffer->Buffer(&_frameBufferContent, sizeof(_frameBufferContent));
 	g_theRenderer->BindConstantBuffer(CONSTANT_SLOT_FRAME, g_frameBuffer);
-	g_theRenderer->DrawVertexArray(verts.size(), verts);
+	g_theRenderer->BindTextureViewWithSampler(0, nullptr);
+
+	m_rvsGame->Render();
+	
 	//ConstantBuffer* model = g_theRenderer->GetModelBuffer();
 	//g_theRenderer->BindConstantBuffer(CONSTANT_SLOT_MODEL, model);
 
@@ -302,6 +319,16 @@ void Game::SetScreenSize(float width, float height)
 	m_screenHeight = height;
 }
 
+Vec2 Game::get_mouse_in_world() const
+{
+	IntVec2 mousePosition = g_theWindow->GetClientMousePosition();
+	static IntVec2 CLIENT_SIZE = g_theWindow->GetClientResolution();
+	//DebugRenderer::Log(Stringf("%i %i", mousePosition.x, mousePosition.y, CLIENT_SIZE.x, CLIENT_SIZE.y), 0, Rgba::BLACK);
+	Vec2 mouse_in_world = Vec2(FloatMap(mousePosition.x, 0, CLIENT_SIZE.x, -1, 1)
+	, FloatMap(mousePosition.y, 0, CLIENT_SIZE.y, 1, -1));
+	return mouse_in_world;
+}
+
 void Game::DoKeyDown(unsigned char keyCode)
 {
 	//g_theAudio->PlaySound(tmpTestSound);
@@ -330,7 +357,7 @@ void Game::DoKeyDown(unsigned char keyCode)
 		}
 		return;
 	}
-	Mat4 rotation = Mat4::MakeRotationXYZ(m_cameraRotation.x, m_cameraRotation.y, 0.f);
+	//Mat4 rotation = Mat4::MakeRotationXYZ(m_cameraRotation.x, m_cameraRotation.y, 0.f);
 	if (keyCode == KEY_SLASH) {
 		if (g_theConsole->GetConsoleMode() == CONSOLE_OFF) {
 			//ProfilePause();
@@ -339,25 +366,39 @@ void Game::DoKeyDown(unsigned char keyCode)
 			//ProfileResume();
 			g_theConsole->SetConsoleMode(CONSOLE_OFF);
 		}
+	} else if (keyCode == KEY_PLUS) {
+		m_num_zone <<= 1;
+		if (m_num_zone > MAX_ZONES) {
+			m_num_zone = MAX_ZONES;
+		}
+		delete m_rvsGame;
+		m_rvsGame = new RVSGame();
+		m_rvsGame->Startup(m_num_zone);
+	} else if (keyCode == KEY_MINUS) {
+		m_num_zone >>= 1;
+		if (m_num_zone < 1) {
+			m_num_zone = 1;
+		}
+		delete m_rvsGame;
+		m_rvsGame = new RVSGame();
+		m_rvsGame->Startup(m_num_zone);
 	} else if (keyCode == KEY_W) {
-		Vec4 move = rotation * Vec4(0, 0, -m_cameraSpeed, 0);
-		m_cameraPosition += Vec3(move.x, move.y, move.z);
-	} else if (keyCode == KEY_A) {
-		Vec4 move = rotation * Vec4(-m_cameraSpeed, 0, 0, 0);
-		m_cameraPosition += Vec3(move.x, move.y, move.z);
-	} else if (keyCode == KEY_S) {
-		Vec4 move = rotation * Vec4(0, 0, m_cameraSpeed, 0);
-		m_cameraPosition += Vec3(move.x, move.y, move.z);
-	} else if (keyCode == KEY_D) {
-		Vec4 move = rotation * Vec4(m_cameraSpeed, 0, 0, 0);
-		m_cameraPosition += Vec3(move.x, move.y, move.z);
+		m_rvsGame->m_use_quad = !m_rvsGame->m_use_quad;
+	} else if (keyCode == 'R') {
+		m_rvsGame->m_set_rotation = true;
+	} else if (keyCode == 'S') {
+		m_rvsGame->m_set_scale = true;
 	}
 
 }
 
 void Game::DoKeyRelease(unsigned char keyCode)
 {
-	UNUSED(keyCode);
+	if (keyCode == 'R') {
+		m_rvsGame->m_set_rotation = false;
+	} else if (keyCode == 'S') {
+		m_rvsGame->m_set_scale = false;
+	}
 }
 
 ////////////////////////////////
@@ -372,6 +413,27 @@ void Game::DoChar(char charCode)
 	if (!IsConsoleUp())
 		return;
 	g_theConsole->Input(charCode);
+}
+
+void Game::mouse_down()
+{
+	m_rvsGame->mouse_down(get_mouse_in_world());
+	m_report_mouse = true;
+}
+
+void Game::mouse_up()
+{
+	m_rvsGame->mouse_up(get_mouse_in_world());
+	m_report_mouse = false;
+}
+
+void Game::mouse_wheel(int delta)
+{
+	if (delta > 0) {
+		m_rvsGame->wheel_up(get_mouse_in_world());
+	} else {
+		m_rvsGame->wheel_down(get_mouse_in_world());
+	}
 }
 
 void Game::ToggleDebugView()

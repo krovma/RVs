@@ -20,6 +20,9 @@ public:
 	bool HandleKeyPressed(unsigned char keyCode);
 	bool HandleKeyReleased(unsigned char keyCode);
 	bool HandleQuitRequested();
+	bool HandleMouseButtonDown();
+	bool HandleMouseButtonUp();
+	bool HandleMouseWheel(int delta);
 	bool HandleChar(char charCode);
 
 private:

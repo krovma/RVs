@@ -15,6 +15,7 @@
 #include <filesystem>
 
 #include "Engine/Script/Py3.hpp"
+#include "Engine/Core/StringUtils.hpp"
 
 //////////////////////////////////////////////////////////////////////////
 App* g_theApp = nullptr;
@@ -178,6 +179,7 @@ void App::RunFrame()
 //////////////////////////////////////////////////////////////////////////
 bool App::HandleKeyPressed(unsigned char keyCode)
 {
+	static int seed = 0;
 	if (m_theGame->IsConsoleUp()) {
 		m_theGame->DoKeyDown(keyCode);
 	} else {
@@ -188,6 +190,7 @@ bool App::HandleKeyPressed(unsigned char keyCode)
 		} else if (0x77 /*F8*/ == keyCode) {
 			delete m_theGame;
 			m_theGame = new Game();
+			g_rng.Init(seed++,0);
 			m_theGame->Startup();
 		} else if (0x71 == keyCode /*F2*/) {
 
@@ -230,6 +233,25 @@ bool App::HandleQuitRequested()
 	m_flagQuit = true;
 	return true;
 }
+
+bool App::HandleMouseButtonDown()
+{
+	m_theGame->mouse_down();
+	return true;
+}
+
+bool App::HandleMouseButtonUp()
+{
+	m_theGame->mouse_up();
+	return true;
+}
+
+bool App::HandleMouseWheel(int delta)
+{
+	m_theGame->mouse_wheel(delta);
+	return true;
+}
+
 ////////////////////////////////
 bool App::HandleChar(char charCode)
 {
@@ -247,4 +269,10 @@ UNIT_TEST(shouldNeverFailTest, "general", 10)
 UNIT_TEST(anotherCoolTest, "general", 5)
 {
 	return (1 + 1 == 2);
+}
+
+UNIT_TEST(binary_file_test, "general", 10)
+{
+	//LoadFileToBuffer();
+	return true;
 }

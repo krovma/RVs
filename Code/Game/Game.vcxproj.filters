@@ -40,6 +40,12 @@
     <ClCompile Include="LogTest.cpp">
       <Filter>UnitTest</Filter>
     </ClCompile>
+    <ClCompile Include="RVSGame.cpp">
+      <Filter>Gameplay</Filter>
+    </ClCompile>
+    <ClCompile Include="ghcs.cpp">
+      <Filter>Data</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.hpp">
@@ -56,6 +62,12 @@
     </ClInclude>
     <ClInclude Include="EngineBuildPreferences.hpp">
       <Filter>General</Filter>
+    </ClInclude>
+    <ClInclude Include="RVSGame.hpp">
+      <Filter>Gameplay</Filter>
+    </ClInclude>
+    <ClInclude Include="ghcs.hpp">
+      <Filter>Data</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -89,5 +101,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+    <None Include="..\..\Run\Data\test.ghcs">
+      <Filter>Data</Filter>
+    </None>
   </ItemGroup>
 </Project>
