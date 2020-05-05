@@ -55,7 +55,7 @@ public:
 	void mouse_down();
 	void mouse_up();
 	void mouse_wheel(int delta);
-
+	size_t m_num_zone = 10;
 //DEBUG
 	void ToggleDebugView();
 
@@ -79,13 +79,13 @@ private:
 	char ui_strbuf[256] = {};
 	float ui_floatbuf = 0;
 
-	size_t m_num_zone = 10;
+
 	RVSGame* m_rvsGame = nullptr;
 	bool m_report_mouse = false;
 //DEBUG
 	bool m_flagDebug = false;
 	float m_upSeconds = 0.f;
-
+	AABB2 m_scene_ortho = AABB2(-1,-1,1,1);
 
 	//TMP
 

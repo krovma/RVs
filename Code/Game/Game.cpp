@@ -28,7 +28,7 @@
 //////////////////////////////////////////////////////////////////////////
 //Delete these globals
 //////////////////////////////////////////////////////////////////////////
-
+Game* g_game=  nullptr;
 ConstantBuffer *g_frameBuffer = nullptr;
 //////////////////////////////////////////////////////////////////////////
 struct FrameBuffer_t
@@ -45,6 +45,7 @@ Game::Game()
 	m_rng = new RNG();
 	m_rng->Init();
 	m_flagRunning = true;
+	g_game = this;
 }
 
 Game::~Game()
@@ -140,6 +141,7 @@ static bool _Profile_Report_Flat(NamedStrings& param)
 }
 
 // Ghcs proc
+#include "Game/ghcs.hpp"
 static bool _Game_Load_ghcs(NamedStrings& param)
 {
 	unsigned char buffer[256];
@@ -148,19 +150,9 @@ static bool _Game_Load_ghcs(NamedStrings& param)
 	LoadFileToBuffer(buffer, 256, path.c_str());
 	buffer_reader new_reader(buffer, 256);
 
-	char c = 0;
-	c = new_reader.next_basic<char>();
-	DebugRenderer::Log(Stringf("%c", c), -1, Rgba::BLACK);
-	c = new_reader.next_basic<char>();
-	DebugRenderer::Log(Stringf("%c", c), -1, Rgba::BLACK);
-	c = new_reader.next_basic<char>();
-	DebugRenderer::Log(Stringf("%c", c), -1, Rgba::BLACK);
-	c = new_reader.next_basic<char>();
-	DebugRenderer::Log(Stringf("%c", c), -1, Rgba::BLACK);
+	ghcs_header h;
+	h = parse_ghcs_header(new_reader);
 
-	int x = new_reader.next_basic<int>();
-	float y = new_reader.next_basic<float>();
-	DebugRenderer::Log(Stringf("%i, %f", x, y), -1, Rgba::BLACK);
 }
 
 void Game::Startup()
@@ -197,7 +189,7 @@ void Game::Startup()
 
 	g_Event->SubscribeEventCallback("report", _Profile_Report);
 	g_Event->SubscribeEventCallback("flat_report", _Profile_Report_Flat);
-	g_Event->SubscribeEventCallback("ghcs", _Game_Load_ghcs);
+	
 
 	m_rvsGame = new RVSGame();
 	m_rvsGame->Startup(m_num_zone);
@@ -301,6 +293,8 @@ void Game::EndFrame()
 
 void Game::Shutdown()
 {
+	m_rvsGame->Shutdown();
+	delete m_rvsGame;
 	g_theWindow->UnlockMouse();
 	//delete _timeBuffer;
 	delete m_mainCamera;
@@ -326,6 +320,8 @@ Vec2 Game::get_mouse_in_world() const
 	//DebugRenderer::Log(Stringf("%i %i", mousePosition.x, mousePosition.y, CLIENT_SIZE.x, CLIENT_SIZE.y), 0, Rgba::BLACK);
 	Vec2 mouse_in_world = Vec2(FloatMap(mousePosition.x, 0, CLIENT_SIZE.x, -1, 1)
 	, FloatMap(mousePosition.y, 0, CLIENT_SIZE.y, 1, -1));
+	mouse_in_world.x = FloatMap(mouse_in_world.x, -1, 1, m_scene_ortho.Min.x, m_scene_ortho.Max.x);
+	mouse_in_world.y = FloatMap(mouse_in_world.y, -1, 1, m_scene_ortho.Min.y, m_scene_ortho.Max.y);
 	return mouse_in_world;
 }
 
@@ -371,6 +367,7 @@ void Game::DoKeyDown(unsigned char keyCode)
 		if (m_num_zone > MAX_ZONES) {
 			m_num_zone = MAX_ZONES;
 		}
+		m_rvsGame->Shutdown();
 		delete m_rvsGame;
 		m_rvsGame = new RVSGame();
 		m_rvsGame->Startup(m_num_zone);

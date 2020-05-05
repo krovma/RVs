@@ -7,6 +7,7 @@
 //#include "Engine/Core/WindowContext.hpp"
 #include "Game/Game.hpp"
 #include "Engine/Core/Time.hpp"
+#include "Engine/Event/EventSystem.hpp"
 
 QuadTree::~QuadTree()
 {
@@ -120,11 +121,15 @@ void RVSGame::Startup(size_t numPolys)
 		zone.m_hull = ConvexHull2(zone.m_poly);
 	}
 
+	g_Event->SubscribeEventCallback("ghcs-load", this, &RVSGame::load_ghcs);
+	g_Event->SubscribeEventCallback("ghcs-save", this, &RVSGame::save_ghcs);
+
 	_update_quad_tree();
 }
 
 void RVSGame::_update_quad_tree()
 {
+
 	delete m_qt;
 	m_qt = new QuadTree(AABB2(-1,-1,1,1));
 	for(auto& each:m_zones) {
@@ -253,6 +258,8 @@ void RVSGame::EndFrame()
 
 void RVSGame::Shutdown()
 {
+	g_Event->UnsubscribeEventCallback("ghcs-load", this, &RVSGame::load_ghcs);
+	g_Event->UnsubscribeEventCallback("ghcs-save", this, &RVSGame::save_ghcs);
 }
 
 void RVSGame::mouse_down(const Vec2& mouse_pos)
@@ -298,6 +305,68 @@ void RVSGame::wheel_down(const Vec2& mouse_pos)
 		}
 		_update_quad_tree();
 	}
+}
+
+#include "Game/ghcs.hpp"
+#include "Game/Game.hpp"
+extern Game* g_game;
+bool RVSGame::load_ghcs(NamedStrings& param)
+{
+	constexpr int buffer_size = 10485760;
+	std::string path = param.GetString("path", "Data/Test.ghcs");
+	byte* buffer = new byte[buffer_size];
+	LoadFileToBuffer(buffer, buffer_size, path.c_str());
+	buffer_reader reader(buffer, buffer_size);
+	ghcs_header header = parse_ghcs_header(reader);
+	if (header.is_big_endian) {
+		reader.m_reverse = true;
+	}
+
+	char fcc[4];
+	while (true) {
+		if (!reader.next_n_byte((byte*)fcc, 4)){
+			break;
+		}
+		if (fcc[1] == 'T') {
+			//toc
+			break;
+		}
+		if (fcc[1] == 'C') {
+			byte type = reader.next_basic<byte>();
+			byte endi = reader.next_basic<byte>();
+			uint32 size = reader.next_basic<uint32>();
+			if (type == ghcs_ConvexPolysChunk) {
+				std::vector<Zone> new_zones;
+				m_zones = parse_convex_poly_chunk(reader);
+				//m_zones = new_zones;
+				_update_quad_tree();
+				g_game->m_num_zone = m_zones.size();
+			} else {
+				reader.m_ptr += size;
+			}
+		}
+	}
+
+
+	return true;
+}
+
+bool RVSGame::save_ghcs(NamedStrings& param)
+{
+	std::string path = param.GetString("path", "Data/Test.ghcs");
+	buffer_writer writer;
+	ghcs_header h;
+	h.is_big_endian = false;
+	h.major_version  = 1;
+	h.minor_version = 0;
+	h.toc_offset = 0;
+	write_ghcs_header(writer, &h);
+	write_convex_poly_chunk(writer, m_zones);
+	FILE* fp;
+	fopen_s(&fp, path.c_str(), "wb");
+	fwrite(writer.m_bytes.data(), 1, writer.m_bytes.size(), fp);
+	fclose(fp);
+	return true;
 }
 
 void RVSGame::raycast_to_all(const Ray2& ray)

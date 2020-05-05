@@ -90,6 +90,7 @@ void App::Shutdown()
 	m_flagQuit = true;
 	DebugRenderer::Shutdown();
 	if (m_theGame) {
+		m_theGame->Shutdown();
 		delete m_theGame;
 		m_theGame = nullptr;
 	}

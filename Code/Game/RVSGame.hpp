@@ -65,6 +65,9 @@ public:
 	void wheel_down(const Vec2& mouse_pos);
 
 	
+	bool load_ghcs(NamedStrings& param);
+	bool save_ghcs(NamedStrings& param);
+
 	void raycast_to_all(const Ray2& ray);
 	void _update_quad_tree();
 	Zone* get_first_zone_include(const Vec2& position);
